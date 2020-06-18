@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.zmj.mapper.ItemsMapperCustom" >
+    <resultMap id="ItemCommentVO" type="com.zmj.pojo.vo.ItemCommentVO" >
+
+    </resultMap>
+
+    <resultMap id="SearchItemsVO" type="com.zmj.pojo.vo.SearchItemsVO" >
+
+    </resultMap>
+
+  <select id="queryItemComments" parameterType="Map" resultMap="ItemCommentVO">
+    SELECT
+      i.comment_level as commentLevel,
+      i.content as content,
+      i.spec_name as specName,
+      i.created_time as createdTime,
+      u.nickname as nickName,
+      u.face as userFace
+    FROM
+        items_comments i
+    LEFT JOIN
+        users u
+    ON
+        i.user_id = u.id
+    WHERE
+        i.item_id = #{paramsMap.itemId}
+        <if test="paramsMap.level != null and paramsMap.level != ''">
+            AND i.comment_level = #{paramsMap.level}
+        </if>
+  </select>
+
+    <select id="searchItems" parameterType="Map" resultMap="SearchItemsVO">
+       SELECT
+            i.id as itemId,
+            i.item_name as itemName,
+            i.sell_counts as sellCounts,
+            ip.price_discount as price,
+            ii.url as imgUrl
+        FROM
+            items i
+        LEFT JOIN
+            items_img ii
+        ON
+            i.id = ii.item_id
+        LEFT JOIN
+            (SELECT item_id, MIN(price_discount) as price_discount FROM items_spec GROUP BY item_id ) ip
+        ON
+            i.id = ip.item_id
+        WHERE
+            ii.is_main = 1
+            <if test="paramsMap.keywords != null and paramsMap.keywords != ''">
+                AND i.item_name like '%${paramsMap.keywords}%'
+            </if>
+            order by
+            <choose>
+                <!--
+                    k: 默认 按商品名称排序
+                    c: 按销量排序
+                    p：按价格排序
+                 -->
+                <when test=" paramsMap.sort == &quot;c&quot;" >
+                    i.sell_counts desc
+                </when>
+                <when test=" paramsMap.sort == &quot;p&quot; ">
+                    ip.price_discount desc
+                </when>
+                <otherwise>
+                    i.item_name asc
+                </otherwise>
+            </choose>
+    </select>
+
+    <select id="searchCatItems" parameterType="Map" resultMap="SearchItemsVO">
+        SELECT
+        i.id as itemId,
+        i.item_name as itemName,
+        i.sell_counts as sellCounts,
+        ip.price_discount as price,
+        ii.url as imgUrl
+        FROM
+        items i
+        LEFT JOIN
+        items_img ii
+        ON
+        i.id = ii.item_id
+        LEFT JOIN
+        (SELECT item_id, MIN(price_discount) as price_discount FROM items_spec GROUP BY item_id ) ip
+        ON
+        i.id = ip.item_id
+        WHERE
+            ii.is_main = 1
+        AND
+            i.cat_id = #{paramsMap.catId}
+        order by
+        <choose>
+            <!--
+                k: 默认 按商品名称排序
+                c: 按销量排序
+                p：按价格排序
+             -->
+            <when test=" paramsMap.sort == &quot;c&quot;" >
+                i.sell_counts desc
+            </when>
+            <when test=" paramsMap.sort == &quot;p&quot; ">
+                ip.price_discount desc
+            </when>
+            <otherwise>
+                i.item_name asc
+            </otherwise>
+        </choose>
+    </select>
+
+    <select id="queryItemsBySpecIds" parameterType="List" resultType="com.zmj.pojo.vo.ShopcartVO">
+        SELECT
+            i.id as itemId,
+            i.item_name as itemName,
+            im.url as itemImgUrl,
+            ip.id as specId,
+            ip.`name` as specName,
+            ip.price_discount as priceDiscount,
+            ip.price_normal as priceNormal
+        FROM
+            items_spec ip
+        LEFT JOIN
+            items i
+        ON
+            i.id = ip.item_id
+        LEFT JOIN
+            items_img im
+        ON
+            im.item_id = i.id
+        WHERE
+            im.is_main = 1
+        AND
+            ip.id IN
+            <foreach collection="paramsList" index="index" item="specId" open="(" separator="," close=")">
+                #{specId}
+            </foreach>
+    </select>
+</mapper>

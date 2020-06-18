@@ -1,0 +1,6 @@
+com\zmj\controller\BaseController.class
+com\zmj\aspect\ServiceLogAspect.class
+com\zmj\config\Swagger2.class
+com\zmj\controller\ItemsController.class
+com\zmj\controller\StuController.class
+com\zmj\controller\IndexController.class
